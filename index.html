@@ -66,8 +66,8 @@
         const MQTT_PORT = 8884; // WSS Port
         // --- END CẤU HÌNH ---
 
-        const clientID = "Web_Client_" + parseInt(Math.random() * 1000);
-        const mqttClient = new Paho.MQTT.Client(MQTT_SERVER, MQTT_PORT, "/mqtt", clientID);
+        const clientId = "web-client-" + parseInt(Math.random() * 100000000000);
+        mqttClient = new Paho.MQTT.Client(MQTT_SERVER, Number(MQTT_PORT), clientId);
 
         // --- KẾT NỐI MQTT ---
         mqttClient.onConnectionLost = onConnectionLost;
