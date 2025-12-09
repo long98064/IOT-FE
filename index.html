@@ -160,24 +160,32 @@ function onMessageArrived(message) {
         }
 
         // --- GỬI LỆNH ĐIỀU KHIỂN QUA MQTT (Web Dashboard -> ESP8266) ---
-        function publishCommand(cmd) {
-            if (mqttClient.isConnected()) {
-                const message = new Paho.MQTT.Message(cmd);
-                message.destinationName = MQTT_TOPIC_COMMAND;
-                mqttClient.send(message);
-                console.log("Command sent: " + cmd);
-                alert(`Lệnh đã gửi: ${cmd}`);
-            } else {
-                alert("Lỗi: Không kết nối được với MQTT Broker.");
-            }
-        }
-        // Xử lý mất kết nối
-        mqttClient.onConnectionLost = function (responseObject) {
-            if (responseObject.errorCode !== 0) {
-                console.error("Connection lost: " + responseObject.errorMessage);
+function publishCommand(cmd) {
+    // 1. Nếu không kết nối (hoặc sắp mất kết nối), gọi hàm kết nối lại
+    if (!mqttClient.isConnected()) {
+        console.warn("Attempting to reconnect MQTT before sending command...");
+        mqttConnect(); 
         
-        // GỌI HÀM KẾT NỐI LẠI SAU MỘT KHOẢNG THỜI GIAN
-        setTimeout(mqttConnect, 5000); // Thử kết nối lại sau 5 giây
+        // Thông báo cho người dùng và yêu cầu thử lại
+        alert("Kết nối đang được thiết lập lại. Vui lòng bấm nút lần nữa sau 5 giây.");
+        return; 
+    }
+
+    try {
+        // 2. Nếu isConnected() là true, tiến hành gửi lệnh
+        const message = new Paho.MQTT.Message(cmd);
+        message.destinationName = MQTT_TOPIC_COMMAND; 
+        
+        mqttClient.send(message);
+        
+        console.log(`Command sent successfully to ${MQTT_TOPIC_COMMAND}: ${cmd}`);
+        alert(`Lệnh đã gửi thành công: ${cmd}`);
+        
+    } catch (e) {
+        // 3. Nếu gửi thất bại (lỗi socket), kết nối lại và yêu cầu thử lại
+        console.error("Error sending command, connection likely lost:", e);
+        mqttConnect(); 
+        alert("Lỗi gửi lệnh! Vui lòng thử lại sau 5 giây.");
     }
 }
 
