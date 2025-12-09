@@ -118,6 +118,7 @@ function onMessageArrived(message) {
         }
     }
 }
+
         // --- GỌI API RENDER ĐỂ LẤY LỊCH SỬ DỮ LIỆU ---
         async function loadHistoryData() {
             try {
@@ -170,6 +171,15 @@ function onMessageArrived(message) {
                 alert("Lỗi: Không kết nối được với MQTT Broker.");
             }
         }
+        // Xử lý mất kết nối
+        mqttClient.onConnectionLost = function (responseObject) {
+            if (responseObject.errorCode !== 0) {
+                console.error("Connection lost: " + responseObject.errorMessage);
+        
+        // GỌI HÀM KẾT NỐI LẠI SAU MỘT KHOẢNG THỜI GIAN
+        setTimeout(mqttConnect, 5000); // Thử kết nối lại sau 5 giây
+    }
+}
 
         // Khởi động kết nối khi tải trang
         connectMQTT();
