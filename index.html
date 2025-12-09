@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Conveyor IoT Dashboard - Realtime & History</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        .data-box, .control-panel { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .realtime span { font-weight: bold; color: #007bff; margin-left: 10px; }
+        button { padding: 10px 15px; margin-right: 10px; cursor: pointer; border: none; border-radius: 4px; color: white; transition: background-color 0.3s; }
+        .btn-run { background-color: #28a745; }
+        .btn-stop { background-color: #ffc107; }
+        .btn-emergency { background-color: #dc3545; }
+        .btn-reset { background-color: #17a2b8; }
+        button:hover { opacity: 0.9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conveyor Belt IoT Dashboard</h1>
+
+        <div class="data-box realtime">
+            <h2>Dữ liệu Thời gian thực (MQTT)</h2>
+            <p>Số Lượng Đếm: <span id="so_luong">--</span></p>
+            <p>Màu Sắc Mới Nhất: <span id="mau">--</span></p>
+            <p>Trạng Thái Motor: <span id="trang_thai">--</span></p>
+        </div>
+
+        <div class="data-box control-panel">
+            <h2>Điều khiển Băng Chuyền</h2>
+            <button class="btn-run" onclick="publishCommand('MOTOR_RUN')">CHẠY</button>
+            <button class="btn-stop" onclick="publishCommand('MOTOR_STOP')">DỪNG</button>
+            <button class="btn-emergency" onclick="publishCommand('EMERGENCY_STOP')">DỪNG KHẨN CẤP</button>
+            <button class="btn-reset" onclick="publishCommand('RESET_COUNT')">RESET ĐẾM</button>
+        </div>
+
+        <div class="data-box history">
+            <h2>Lịch sử Sản phẩm (MongoDB qua API Render)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Màu sắc</th>
+                        <th>Số lượng tại thời điểm</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- ⚠️ CẤU HÌNH CẦN THAY THẾ ⚠️ ---
+        const RENDER_API_URL = "https://iot-qxx3.onrender.com"; // Thay thế bằng URL Render thực tế của bạn
+        const MQTT_TOPIC_DATA = "tlong/bangchuyen/data";
+        const MQTT_TOPIC_COMMAND = "tlong/bangchuyen/command";
+        const MQTT_SERVER = "broker.hivemq.com";
+        const MQTT_PORT = 8884; // WSS Port
+        // --- END CẤU HÌNH ---
+
+        const clientID = "Web_Client_" + parseInt(Math.random() * 1000);
+        const mqttClient = new Paho.MQTT.Client(MQTT_SERVER, MQTT_PORT, "/mqtt", clientID);
+
+        // --- KẾT NỐI MQTT ---
+        mqttClient.onConnectionLost = onConnectionLost;
+        mqttClient.onMessageArrived = onMessageArrived;
+
+        function connectMQTT() {
+            mqttClient.connect({ 
+                onSuccess: onConnect, 
+                useSSL: true, // Bắt buộc cho Port 8884
+                timeout: 3 
+            });
+        }
+        
+        function onConnect() {
+            console.log("Connected to MQTT Broker.");
+            mqttClient.subscribe(MQTT_TOPIC_DATA);
+            loadHistoryData(); // Tải lịch sử ngay khi kết nối thành công
+        }
+
+        function onConnectionLost(responseObject) {
+            if (responseObject.errorCode !== 0) {
+                console.log("Connection Lost: " + responseObject.errorMessage);
+                // Thử kết nối lại sau 5 giây
+                setTimeout(connectMQTT, 5000); 
+            }
+        }
+        
+        // --- XỬ LÝ DỮ LIỆU REAL-TIME TỪ ESP8266 (MQTT) ---
+        function onMessageArrived(message) {
+            if (message.destinationName === MQTT_TOPIC_DATA) {
+                try {
+                    const data = JSON.parse(message.payloadString);
+                    
+                    // Cập nhật giao diện (Real-time)
+                    document.getElementById('so_luong').innerText = data.soluong || '--';
+                    document.getElementById('mau').innerText = data.mau || '--';
+                    document.getElementById('trang_thai').innerText = data.trangthai || '--';
+
+                    // Cập nhật lịch sử (thêm bản ghi mới nhất)
+                    addRecordToHistory(data, true); 
+                } catch (e) {
+                    console.error("Failed to parse MQTT data:", e);
+                }
+            }
+        }
+        
+        // --- GỌI API RENDER ĐỂ LẤY LỊCH SỬ DỮ LIỆU ---
+        async function loadHistoryData() {
+            try {
+                const response = await fetch(`${RENDER_API_URL}/api/history`);
+                const historyData = await response.json();
+                
+                const tableBody = document.getElementById('history-table-body');
+                tableBody.innerHTML = ''; // Xóa dữ liệu cũ
+
+                historyData.forEach(data => addRecordToHistory(data));
+
+            } catch (error) {
+                console.error("Error fetching history from Render API:", error);
+                document.getElementById('history-table-body').innerHTML = 
+                    '<tr><td colspan="4" style="color:red;">Lỗi tải lịch sử. Kiểm tra URL Render.</td></tr>';
+            }
+        }
+
+        // --- HÀM HỖ TRỢ HIỂN THỊ LỊCH SỬ ---
+        function addRecordToHistory(data, isNew = false) {
+            const tableBody = document.getElementById('history-table-body');
+            const row = tableBody.insertRow(0); // Luôn chèn vào đầu bảng
+
+            const timestampCell = row.insertCell(0);
+            const mauCell = row.insertCell(1);
+            const soluongCell = row.insertCell(2);
+            const trangthaiCell = row.insertCell(3);
+
+            const displayTime = new Date(data.timestamp || Date.now()).toLocaleTimeString('vi-VN');
+
+            timestampCell.innerText = displayTime;
+            mauCell.innerText = data.mau;
+            soluongCell.innerText = data.soluong;
+            trangthaiCell.innerText = data.trangthai;
+
+            if (isNew) {
+                row.style.backgroundColor = '#e6f7ff'; // Highlight bản ghi mới
+            }
+        }
+
+        // --- GỬI LỆNH ĐIỀU KHIỂN QUA MQTT (Web Dashboard -> ESP8266) ---
+        function publishCommand(cmd) {
+            if (mqttClient.isConnected()) {
+                const message = new Paho.MQTT.Message(cmd);
+                message.destinationName = MQTT_TOPIC_COMMAND;
+                mqttClient.send(message);
+                console.log("Command sent: " + cmd);
+                alert(`Lệnh đã gửi: ${cmd}`);
+            } else {
+                alert("Lỗi: Không kết nối được với MQTT Broker.");
+            }
+        }
+
+        // Khởi động kết nối khi tải trang
+        connectMQTT();
+        // loadHistoryData(); // Gọi ở onConnect
+    </script>
+</body>
+</html>
