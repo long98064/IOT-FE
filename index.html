@@ -96,23 +96,27 @@
         }
         
         // --- XỬ LÝ DỮ LIỆU REAL-TIME TỪ ESP8266 (MQTT) ---
-        function onMessageArrived(message) {
-            if (message.destinationName === MQTT_TOPIC_DATA) {
-                try {
-                    const data = JSON.parse(message.payloadString);
-                    
-                    // Cập nhật giao diện (Real-time)
-                    document.getElementById('so_luong').innerText = data.soluong || '--';
-                    document.getElementById('mau').innerText = data.mau || '--';
-                    document.getElementById('trang_thai').innerText = data.trangthai || '--';
+function onMessageArrived(message) {
+    if (message.destinationName === MQTT_TOPIC_DATA) {
+        try {
+            // Lấy chuỗi JSON từ payload và loại bỏ khoảng trắng/xuống dòng thừa
+            const jsonString = message.payloadString.trim(); 
+            
+            const data = JSON.parse(jsonString); // Phân tích JSON đã được làm sạch
+            
+            // Cập nhật giao diện (Real-time)
+            document.getElementById('so_luong').innerText = data.soluong || '--';
+            document.getElementById('mau').innerText = data.mau || '--';
+            document.getElementById('trang_thai').innerText = data.trangthai || '--';
 
-                    // Cập nhật lịch sử (thêm bản ghi mới nhất)
-                    addRecordToHistory(data, true); 
-                } catch (e) {
-                    console.error("Failed to parse MQTT data:", e);
-                }
-            }
+            // Cập nhật lịch sử (thêm bản ghi mới nhất)
+            addRecordToHistory(data, true); 
+        } catch (e) {
+            // Dòng này sẽ hiển thị lỗi cú pháp JSON trong Console
+            console.error("Failed to parse MQTT data:", e, "Payload:", message.payloadString);
         }
+    }
+}
         
         // --- GỌI API RENDER ĐỂ LẤY LỊCH SỬ DỮ LIỆU ---
         async function loadHistoryData() {
