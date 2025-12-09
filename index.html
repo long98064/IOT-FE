@@ -100,7 +100,7 @@
 function onMessageArrived(message) {
     if (message.destinationName === MQTT_TOPIC_DATA) {
         try {
-            // SỬA: LÀM SẠCH CHUỖI JSON TRONG FRONTEND
+            // Lấy chuỗi và làm sạch tuyệt đối (loại bỏ \r, \n, và khoảng trắng)
             const jsonString = message.payloadString.trim(); 
             const cleanedString = jsonString.replace(/[\n\r]/g, '');
 
@@ -112,7 +112,7 @@ function onMessageArrived(message) {
             document.getElementById('trang_thai').innerText = data.trangthai || '--';
 
             // Cập nhật lịch sử (thêm bản ghi mới nhất vào bảng mà không cần F5)
-            addRecordToHistory(data, true); // <--- HÀM NÀY PHẢI ĐƯỢC GỌI
+            addRecordToHistory(data, true); 
         } catch (e) {
             console.error("Failed to parse MQTT data:", e, "Payload:", message.payloadString);
         }
