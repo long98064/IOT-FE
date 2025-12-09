@@ -161,18 +161,17 @@ function onMessageArrived(message) {
 
         // --- GỬI LỆNH ĐIỀU KHIỂN QUA MQTT (Web Dashboard -> ESP8266) ---
 function publishCommand(cmd) {
-    // 1. Nếu không kết nối (hoặc sắp mất kết nối), gọi hàm kết nối lại
+    // Nếu kết nối không ổn định, buộc phải tái kết nối
     if (!mqttClient.isConnected()) {
-        console.warn("Attempting to reconnect MQTT before sending command...");
+        console.warn("MQTT Disconnected. Reconnecting...");
         mqttConnect(); 
         
-        // Thông báo cho người dùng và yêu cầu thử lại
+        // Cần thông báo và dừng lại để phiên kết nối mới có thời gian thiết lập
         alert("Kết nối đang được thiết lập lại. Vui lòng bấm nút lần nữa sau 5 giây.");
         return; 
     }
 
     try {
-        // 2. Nếu isConnected() là true, tiến hành gửi lệnh
         const message = new Paho.MQTT.Message(cmd);
         message.destinationName = MQTT_TOPIC_COMMAND; 
         
@@ -182,7 +181,7 @@ function publishCommand(cmd) {
         alert(`Lệnh đã gửi thành công: ${cmd}`);
         
     } catch (e) {
-        // 3. Nếu gửi thất bại (lỗi socket), kết nối lại và yêu cầu thử lại
+        // Nếu lệnh bị lỗi (socket đóng đột ngột), kết nối lại và yêu cầu thử lại
         console.error("Error sending command, connection likely lost:", e);
         mqttConnect(); 
         alert("Lỗi gửi lệnh! Vui lòng thử lại sau 5 giây.");
