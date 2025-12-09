@@ -96,14 +96,12 @@
         }
         
         // --- XỬ LÝ DỮ LIỆU REAL-TIME TỪ ESP8266 (MQTT) ---
-// Thay thế hàm onMessageArrived hiện tại bằng hàm này:
+// Thay thế hàm onMessageArrived hiện tại trong index.html
 function onMessageArrived(message) {
     if (message.destinationName === MQTT_TOPIC_DATA) {
         try {
-            // Sử dụng trim() để loại bỏ khoảng trắng và ký tự xuống dòng ở đầu/cuối
+            // SỬA: LÀM SẠCH CHUỖI JSON TRONG FRONTEND
             const jsonString = message.payloadString.trim(); 
-            
-            // Thêm replace để loại bỏ các ký tự xuống dòng thừa trong chuỗi JSON (nếu có)
             const cleanedString = jsonString.replace(/[\n\r]/g, '');
 
             const data = JSON.parse(cleanedString); // Phân tích chuỗi đã làm sạch
@@ -113,13 +111,13 @@ function onMessageArrived(message) {
             document.getElementById('mau').innerText = data.mau || '--';
             document.getElementById('trang_thai').innerText = data.trangthai || '--';
 
-            // Cập nhật lịch sử (thêm bản ghi mới nhất)
-            addRecordToHistory(data, true); 
+            // Cập nhật lịch sử (thêm bản ghi mới nhất vào bảng mà không cần F5)
+            addRecordToHistory(data, true); // <--- HÀM NÀY PHẢI ĐƯỢC GỌI
         } catch (e) {
             console.error("Failed to parse MQTT data:", e, "Payload:", message.payloadString);
         }
     }
-}      
+}
         // --- GỌI API RENDER ĐỂ LẤY LỊCH SỬ DỮ LIỆU ---
         async function loadHistoryData() {
             try {
