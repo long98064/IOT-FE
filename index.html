@@ -83,7 +83,7 @@
         
         function onConnect() {
             console.log("Connected to MQTT Broker.");
-            mqttClient.subscribe(MQTT_TOPIC_DATA);
+            mqttClient.subscribe(MQTT_TOPIC_DATA, {qos: 1});
             loadHistoryData(); // Tải lịch sử ngay khi kết nối thành công
         }
 
