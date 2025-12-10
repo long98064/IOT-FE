@@ -166,7 +166,7 @@ function publishCommand(cmd) {
     // Nếu kết nối không ổn định, buộc phải tái kết nối
     if (!mqttClient.isConnected()) {
         console.warn("MQTT Disconnected. Reconnecting...");
-        mqttConnect(); 
+        connectMQTT(); 
         
         // Cần thông báo và dừng lại để phiên kết nối mới có thời gian thiết lập
         alert("Kết nối đang được thiết lập lại. Vui lòng bấm nút lần nữa sau 5 giây.");
@@ -185,7 +185,7 @@ function publishCommand(cmd) {
     } catch (e) {
         // Nếu lệnh bị lỗi (socket đóng đột ngột), kết nối lại và yêu cầu thử lại
         console.error("Error sending command, connection likely lost:", e);
-        mqttConnect(); 
+        connectMQTT(); 
         alert("Lỗi gửi lệnh! Vui lòng thử lại sau 5 giây.");
     }
 }
