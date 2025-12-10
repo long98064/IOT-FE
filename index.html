@@ -65,7 +65,7 @@
 
        // THAY THẾ CẤU HÌNH NÀY:
        const MQTT_SERVER = "22d9a4bac641496a885db88574135654.s1.eu.hivemq.cloud"; // Broker HIVE MQ CLOUD
-       const MQTT_PORT = 8884; // Port MỚI (TLS/SSL)
+       const MQTT_PORT = 8883; // Port MỚI (TLS/SSL)
         // --- END CẤU HÌNH ---
 
         const clientId = "web-client-" + parseInt(Math.random() * 100000000000);
@@ -75,7 +75,7 @@
         mqttClient.onConnectionLost = onConnectionLost;
         mqttClient.onMessageArrived = onMessageArrived;
 
-        function connectMQTT() {
+        function mqttConnect() {
             mqttClient.connect({ 
                 onSuccess: onConnect, 
                 useSSL: true, // Bắt buộc cho Port 8884
@@ -93,7 +93,7 @@
             if (responseObject.errorCode !== 0) {
                 console.log("Connection Lost: " + responseObject.errorMessage);
                 // Thử kết nối lại sau 5 giây
-                setTimeout(connectMQTT, 5000); 
+                setTimeout(mqttConnect, 5000); 
             }
         }
         
@@ -166,7 +166,7 @@ function publishCommand(cmd) {
     // Nếu kết nối không ổn định, buộc phải tái kết nối
     if (!mqttClient.isConnected()) {
         console.warn("MQTT Disconnected. Reconnecting...");
-        connectMQTT(); 
+        mqttConnect(); 
         
         // Cần thông báo và dừng lại để phiên kết nối mới có thời gian thiết lập
         alert("Kết nối đang được thiết lập lại. Vui lòng bấm nút lần nữa sau 5 giây.");
@@ -185,13 +185,13 @@ function publishCommand(cmd) {
     } catch (e) {
         // Nếu lệnh bị lỗi (socket đóng đột ngột), kết nối lại và yêu cầu thử lại
         console.error("Error sending command, connection likely lost:", e);
-        connectMQTT(); 
+        mqttConnect(); 
         alert("Lỗi gửi lệnh! Vui lòng thử lại sau 5 giây.");
     }
 }
 
         // Khởi động kết nối khi tải trang
-        connectMQTT();
+        mqttConnect();
         // loadHistoryData(); // Gọi ở onConnect
     </script>
 </body>
