@@ -75,7 +75,7 @@
         mqttClient.onConnectionLost = onConnectionLost;
         mqttClient.onMessageArrived = onMessageArrived;
 
-        function mqttConnect() {
+        function connectMQTT() {
             mqttClient.connect({ 
                 onSuccess: onConnect, 
                 useSSL: true, // Bắt buộc cho Port 8884
@@ -93,7 +93,7 @@
             if (responseObject.errorCode !== 0) {
                 console.log("Connection Lost: " + responseObject.errorMessage);
                 // Thử kết nối lại sau 5 giây
-                setTimeout(mqttConnect, 5000); 
+                setTimeout(connectMQTT, 5000); 
             }
         }
         
@@ -166,7 +166,7 @@ function publishCommand(cmd) {
     // Nếu kết nối không ổn định, buộc phải tái kết nối
     if (!mqttClient.isConnected()) {
         console.warn("MQTT Disconnected. Reconnecting...");
-        mqttConnect(); 
+        connectMQTT(); 
         
         // Cần thông báo và dừng lại để phiên kết nối mới có thời gian thiết lập
         alert("Kết nối đang được thiết lập lại. Vui lòng bấm nút lần nữa sau 5 giây.");
@@ -185,13 +185,13 @@ function publishCommand(cmd) {
     } catch (e) {
         // Nếu lệnh bị lỗi (socket đóng đột ngột), kết nối lại và yêu cầu thử lại
         console.error("Error sending command, connection likely lost:", e);
-        mqttConnect(); 
+        connectMQTT(); 
         alert("Lỗi gửi lệnh! Vui lòng thử lại sau 5 giây.");
     }
 }
 
         // Khởi động kết nối khi tải trang
-        mqttConnect();
+        connectMQTT();
         // loadHistoryData(); // Gọi ở onConnect
     </script>
 </body>
