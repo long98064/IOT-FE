@@ -59,11 +59,13 @@
 
     <script>
         // --- ⚠️ CẤU HÌNH CẦN THAY THẾ ⚠️ ---
-        const RENDER_API_URL = "https://iot-qxx3.onrender.com"; // Thay thế bằng URL Render thực tế của bạn
-        const MQTT_TOPIC_DATA = "tlong/bangchuyen/data";
-        const MQTT_TOPIC_COMMAND = "tlong/bangchuyen/command";
-        const MQTT_SERVER = "broker.hivemq.com";
-        const MQTT_PORT = 8884; // WSS Port
+       const RENDER_API_URL = "https://iot-qxx3.onrender.com"; // [cite: 20]
+       const MQTT_TOPIC_DATA = "tlong/bangchuyen/data";
+       const MQTT_TOPIC_COMMAND = "tlong/bangchuyen/command";
+
+       // THAY THẾ CẤU HÌNH NÀY:
+       const MQTT_SERVER = "22d9a4bac641496a885db88574135654.s1.eu.hivemq.cloud"; // Broker HIVE MQ CLOUD
+       const MQTT_PORT = 8883; // Port MỚI (TLS/SSL)
         // --- END CẤU HÌNH ---
 
         const clientId = "web-client-" + parseInt(Math.random() * 100000000000);
@@ -73,13 +75,15 @@
         mqttClient.onConnectionLost = onConnectionLost;
         mqttClient.onMessageArrived = onMessageArrived;
 
-        function connectMQTT() {
-            mqttClient.connect({ 
-                onSuccess: onConnect, 
-                useSSL: true, // Bắt buộc cho Port 8884
-                timeout: 3 
-            });
-        }
+       function connectMQTT() {
+        mqttClient.connect({ 
+           onSuccess: onConnect, 
+           useSSL: true, 
+           timeout: 3,
+           userName: "tlong", // THÊM XÁC THỰC
+           password: "Tlong1234" // THÊM XÁC THỰC
+       });
+    }
         
         function onConnect() {
             console.log("Connected to MQTT Broker.");
